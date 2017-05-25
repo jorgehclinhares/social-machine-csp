@@ -1,0 +1,69 @@
+
+1) Ligar a maquina
+  - Ligar o banco de dados
+  - Start no serviço
+
+2) Registrar no locationService
+  - informar key e host
+  - atualizar registro
+  - procurar outra máquina social
+
+3) Me relacionar
+  - procurar outra máquina no locationService
+  - informar a key do relacionamento
+  - carregar o relacionamento
+  - validar o relacionamento
+  - verificar restrições
+  - liberar acesso ao processo alvo
+
+4) Processo alvo
+  - consultar base de dados
+  - retornar resultado
+
+* ter uma função para gerar random keys
+
+SocialMachine
+
+_setKey
+_getKey
+
+
+_____________________
+
+-------------------
+-- LocationServer
+-------------------
+channel registerLocation, findLocation, updateLocation
+channel locationServerKey: { 0..1 }
+channel locationServerHost: { 0..1 }
+
+-------------------
+-- SocialMachine
+-------------------
+channel key:  { 0..1 }
+channel host: { 0..1 }
+channel sm_getRelationships
+
+key = 4
+
+SocialMachineOn =  host?h -> key?k  -> locationServer(h, k)
+
+_setKey
+
+SocialMachine(h, k) = getRelationships(h, k) 
+
+locationServer(h, k) =  registerLocation -> locationServerHost!h -> locationServerKey!k -> SocialMachine(h, k)
+                        [] findLocation -> locationServerHost!h -> locationServerKey!k -> SocialMachine(h, k)
+                        [] updateLocation -> locationServerHost!h -> locationServerKey!k -> SocialMachine(h, k)
+
+getRelationships(h, k) =  sm_getRelationships -> SocialMachine(h, k)
+                          [] requestRelationship
+
+module key
+   X = 2
+   Y = X + 2
+exports
+   Z = 2 + Y + X
+endmodule
+
+_setKey(key) = A::Z

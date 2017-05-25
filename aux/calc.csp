@@ -1,0 +1,25 @@
+channel soma, subtracao, divisao, multiplicacao
+channel resultado, calc
+channel digito: { 0..9 }
+channel visor: Int
+
+Calculadora = visor!0 -> digito?d -> Main(0,d)
+
+Main(memoria, valor) =  soma               -> Somar(memoria, valor)
+                        |~| subtracao      -> Subtrair(memoria, valor)
+                        |~| multiplicacao  -> Multiplicar(memoria, valor)
+                        |~| divisao        -> Dividir(memoria, valor)
+
+Somar(memoria, valor) = resultado -> visor!(memoria+valor) -> calc -> Calculadora
+
+Subtrair(memoria, valor) = resultado -> visor!(memoria-valor) -> calc -> Calculadora
+
+Dividir(memoria, valor) = 
+  if(valor != 0) then resultado -> visor!(memoria/valor) -> calc -> Calculadora
+  else resultado -> visor!0 -> calc -> Calculadora
+
+Multiplicar(memoria, valor) = resultado -> visor!(memoria*valor) -> calc -> Calculadora
+
+assert Calculadora :[deadlock-free]
+assert Calculadora :[deterministic]
+assert Calculadora :[divergence-free]

@@ -1,0 +1,34 @@
+-------------------
+-- LocationServer
+-------------------
+channel registerLocation, findLocation, updateLocation
+channel locationServerKey: { 0..9 }
+channel locationServerHost: { 0..9 }
+
+-------------------
+-- SocialMachine
+-------------------
+channel getRelationships, Relationship
+
+sm1Relationships = { 0..9 }
+sm1Host = 1
+sm1Key = 1
+
+sm2Relationships = { 0..20 }
+sm2Host = 1
+sm2Key = 1
+
+SocialMachineOn = locationServer(sm1Host, sm1Key, {})
+
+SocialMachine(h, k, rel) =  getRelationships -> SocialMachine(h, k, sm1Relationships)
+                            [] Relationship -> SocialMachine(h, k, sm1Relationships)
+
+locationServer(h, k, rel) = registerLocation -> locationServerHost!h -> locationServerKey!k -> SocialMachine(h, k, rel)
+                            [] findLocation -> locationServerHost!h -> locationServerKey!k -> SocialMachine(h, k, rel)
+                            [] updateLocation -> locationServerHost!h -> locationServerKey!k -> SocialMachine(h, k, rel)
+
+
+
+assert SocialMachineOn :[deadlock-free]
+assert SocialMachineOn :[deterministic]
+assert SocialMachineOn :[divergence-free]
