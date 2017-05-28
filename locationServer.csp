@@ -1,0 +1,43 @@
+
+-- (host, keyAccess)
+channel locationServerRegister: Char
+channel locationServerFind: Char
+channel ls_resquest: { 0..1 }
+channel ls_response: LS_RESPONSE_TYPES
+channel ls_sms_keys: { 0..4 }
+
+-- OP 0 = Register SocialMachine
+-- OP 1 = Find SocialMachine
+
+datatype LS_RESPONSE_TYPES = socialMachineNotFound | duplicatedRelationship
+
+LocationServerMain(operation, keyAccess, smsKey) = (
+	ls_resquest!operation -> if ( empty(smsKey) ) then (
+		(operation == 0) & registerSM(operation, keyAccess, {})
+		[] (operation == 1) & findSM(operation, keyAccess, {})
+	) else (
+		(operation == 0) & registerSM(operation, keyAccess, smsKey)
+		[] (operation == 1) & findSM(operation, keyAccess, smsKey)
+	)
+)
+
+findSM(operation, keyAccess, smsKey) = (
+	if ( member(keyAccess, smsKey) ) then ( 
+		locationServerFind!keyAccess -> SocialMachineMain(operation, keyAccess, smsKey)
+	) else (
+		ls_response!socialMachineNotFound -> SocialMachineMain(operation, keyAccess, smsKey)
+	)
+)
+
+registerSM(operation, keyAccess, smsKey) = (
+	if ( member(keyAccess, smsKey) ) then ( 
+		ls_response!duplicatedRelationship -> SocialMachineMain(operation, keyAccess, smsKey)
+	) else (
+		--if (empty(smsKey)) then (
+			locationServerRegister!keyAccess -> SocialMachineMain(operation, keyAccess, smsKey)
+		--) else (
+			--SocialMachineMain(union(keyAccess, smsKey))
+		--)
+	)
+)
+

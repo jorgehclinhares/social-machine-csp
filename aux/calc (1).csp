@@ -1,0 +1,30 @@
+channel soma, igual, AC, C
+channel digito: {0..9}
+channel display: Int
+
+validDigs(Mem, Disp) = { dig | dig<-{0..9}, Mem+Disp*10+dig <= 99}
+
+Calculadora = display!0 -> Calc(0, 0)
+
+Calc(Mem, Disp) = Mem+Disp!=0 & C -> Calculadora
+                [] Mem+Disp==0 & AC -> Calculadora
+                [] igual -> CalcIgual(0, Disp)
+                [] soma -> CalcSoma(Mem+Disp, 0)
+                [] Disp<=9 & digito?d -> display!Disp*10+d -> Calc(Mem, Disp*10+d)
+
+CalcIgual(Mem, Disp) = Mem+Disp!=0 & C -> Calculadora
+                     [] Mem+Disp==0 & AC -> Calculadora
+                     [] igual -> CalcIgual(Mem, Disp)
+                     [] soma -> CalcSoma(Mem+Disp, 0)
+                     [] digito?d -> display!d -> Calc(0, d)
+
+CalcSoma(Mem, Disp) = AC -> Calculadora
+                    [] igual -> display!Mem+Disp -> CalcIgual(0, Mem+Disp)
+                    [] Mem+Disp<=99 & soma -> display!Mem+Disp -> CalcSoma(Mem+Disp, 0)
+                    [] digito?d:validDigs(Mem, Disp) -> DispDig(Mem, Disp, d)
+
+DispDig(Mem, Disp, dig) = display!Disp*10+dig -> CalcSoma(Mem, Disp*10+dig)
+
+assert Calculadora :[deadlock-free]
+assert Calculadora :[deterministic]
+assert Calculadora :[divergence-free]

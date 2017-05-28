@@ -1,0 +1,57 @@
+include "locationServer.csp"
+
+channel serviceOn: Bool
+channel databaseOn: Bool
+channel relationships: { 0..2 }.CONSTRAINTS
+channel checkConstraints: Bool
+channel sm_response: SM_RESPONSE_TYPES
+
+channel operations: { 0..1 }
+channel databaseRelationship: { 0..2 }
+
+-- DATATYPES
+datatype CONSTRAINTS = accessData | countAcess 
+datatype SM_RESPONSE_TYPES = RelationInfo | RelationNotFound | constraintNotFound | invalidOperation
+
+-- CONSTANTS
+PROVIDER_RELATIONSHIPS = { 0..10 }
+PROVIDER_CONSTRAINTS = CONSTRAINTS
+
+-- Init = init()
+Init = SM1 [] SM2
+SM1 = databaseOn!true -> serviceOn!true -> SocialMachineMain(0, 'a', {})
+SM2 = databaseOn!true -> serviceOn!true -> SocialMachineMain(0, 'b', {})
+
+SocialMachineMain(op, keyAccess, smsKey) = (
+	if (op < 2) then (
+		LocationServerMain(1, keyAccess, smsKey)
+		[] relationships?idRel.idConst -> validRelation(1, keyAccess, smsKey, idRel, idConst)
+	) else (
+		sm_response!invalidOperation -> SocialMachineMain(1, keyAccess, smsKey)
+	)
+)
+
+validRelation(op, keyAccess, smsKey, idRel, idConst) = (
+	if ( member(idRel, PROVIDER_RELATIONSHIPS) ) then ( 
+		validConstraints(op, keyAccess, smsKey, idConst) 
+	) else (
+		sm_response!RelationNotFound -> SocialMachineMain(op, keyAccess, smsKey)
+	)
+)
+
+validConstraints(op, keyAccess, smsKey, idConst) = (
+	if ( member(idConst, PROVIDER_CONSTRAINTS) ) then (
+		sm_response!RelationInfo -> SocialMachineMain(op, keyAccess, smsKey)
+	) else (
+		sm_response!RelationNotFound -> SocialMachineMain(op, keyAccess, smsKey)
+	)
+)
+
+--establishRelationship(externalAccessKey, smsKey) = 
+	--databaseRelationship?externalAccessKey -> SocialMachineMain(op, keyAccess, smsKey)
+
+
+-- ASSERTS
+assert Init :[deadlock-free]
+assert Init :[deterministic]
+assert Init :[divergence-free]
