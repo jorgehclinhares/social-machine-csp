@@ -1,41 +1,38 @@
 
--- (host, keyAccess)
-channel locationServerRegister: Int
-channel locationServerFind: Int
+-- (host, accessKey)
+channel ls_register: Int
+channel ls_find: Int
 channel ls_resquest: { 0..1 }
 channel ls_response: LS_RESPONSE_TYPES
 channel ls_sms_keys: { 1, 2, 3, 4, 6, 6 }
-channel ls_operations: {0,1}
 
 -- OP 0 = Register SocialMachine
 -- OP 1 = Find SocialMachine
 
-datatype LS_RESPONSE_TYPES = socialMachineNotFound | duplicatedRelationship
+datatype LS_RESPONSE_TYPES = socialMachineNotFound | duplicatedRelationship | invalidOperation
 
-LocationServerMain(smsKey) = (
-	ls_sms_keys?keyAccess -> (
-		registerSM(keyAccess, smsKey)
-		[] findSM(keyAccess, smsKey)
-	)
+LocationServerMain(operation, accessKey, smsKey) = (
+	(operation == 0) & registerSM(accessKey, smsKey)
+	[] (operation == 1) & findSM(accessKey, smsKey)
+	[] (operation > 1) & ls_response!invalidOperation -> SocialMachineMain(accessKey, smsKey)
 )
 
-findSM(keyAccess, smsKey) = (
-	if ( member(keyAccess, smsKey) ) then ( 
-		locationServerFind!keyAccess -> SocialMachineMain(smsKey)
+findSM(accessKey, smsKey) = (
+	if ( member(accessKey, smsKey) ) then ( 
+		ls_find!accessKey -> SocialMachineMain(accessKey, smsKey)
 	) else (
-		ls_response!socialMachineNotFound -> SocialMachineMain(smsKey)
+		ls_response!socialMachineNotFound -> SocialMachineMain(accessKey, smsKey)
 	)
 )
 
-registerSM(keyAccess, smsKey) = (
-	if ( member(keyAccess, smsKey) ) then ( 
-		ls_response!duplicatedRelationship -> SocialMachineMain(smsKey)
+registerSM(accessKey, smsKey) = (
+	if ( member(accessKey, smsKey) ) then ( 
+		ls_response!duplicatedRelationship -> SocialMachineMain(accessKey, smsKey)
 	) else (
 		if (empty(smsKey)) then (
-			locationServerRegister!keyAccess -> SocialMachineMain(union({keyAccess}, smsKey))
+			ls_register!accessKey -> SocialMachineMain(accessKey, union({accessKey}, smsKey))
 		) else (
-			locationServerRegister!keyAccess -> SocialMachineMain(smsKey)
+			ls_register!accessKey -> SocialMachineMain(accessKey, smsKey)
 		)
 	)
 )
-
