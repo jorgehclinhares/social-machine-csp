@@ -2,11 +2,9 @@ include "locationServer.csp"
 
 channel serviceOn: Bool
 channel databaseOn: Bool
-channel relationships: { 0..2 }.CONSTRAINTS
-channel checkConstraints: Bool
+channel relationships: { 0..1 }.CONSTRAINTS
 channel sm_response: SM_RESPONSE_TYPES
-
-channel operations: { 0..1 }
+channel sm_accessKeys: { 0..2 }
 channel databaseRelationship: { 0..2 }
 
 -- DATATYPES
@@ -18,38 +16,29 @@ PROVIDER_RELATIONSHIPS = { 0..10 }
 PROVIDER_CONSTRAINTS = CONSTRAINTS
 
 -- Init = init()
-Init = SM1 [] SM2
-SM1 = databaseOn!true -> serviceOn!true -> SocialMachineMain(0, 'a', {})
-SM2 = databaseOn!true -> serviceOn!true -> SocialMachineMain(0, 'b', {})
 
-SocialMachineMain(op, keyAccess, smsKey) = (
-	if (op < 2) then (
-		LocationServerMain(1, keyAccess, smsKey)
-		[] relationships?idRel.idConst -> validRelation(1, keyAccess, smsKey, idRel, idConst)
-	) else (
-		sm_response!invalidOperation -> SocialMachineMain(1, keyAccess, smsKey)
-	)
+Init = SocialMachineMain({})
+
+SocialMachineMain(smsKey) = (
+	LocationServerMain(smsKey)
+	[] relationships?idRel.idConst -> validRelation(smsKey, idRel, idConst)
 )
 
-validRelation(op, keyAccess, smsKey, idRel, idConst) = (
+validRelation(smsKey, idRel, idConst) = (
 	if ( member(idRel, PROVIDER_RELATIONSHIPS) ) then ( 
-		validConstraints(op, keyAccess, smsKey, idConst) 
+		validConstraints(smsKey, idConst) 
 	) else (
-		sm_response!RelationNotFound -> SocialMachineMain(op, keyAccess, smsKey)
+		sm_response!RelationNotFound -> SocialMachineMain(smsKey)
 	)
 )
 
-validConstraints(op, keyAccess, smsKey, idConst) = (
+validConstraints(smsKey, idConst) = (
 	if ( member(idConst, PROVIDER_CONSTRAINTS) ) then (
-		sm_response!RelationInfo -> SocialMachineMain(op, keyAccess, smsKey)
+		sm_response!RelationInfo -> SocialMachineMain(smsKey)
 	) else (
-		sm_response!RelationNotFound -> SocialMachineMain(op, keyAccess, smsKey)
+		sm_response!RelationNotFound -> SocialMachineMain(smsKey)
 	)
 )
-
---establishRelationship(externalAccessKey, smsKey) = 
-	--databaseRelationship?externalAccessKey -> SocialMachineMain(op, keyAccess, smsKey)
-
 
 -- ASSERTS
 assert Init :[deadlock-free]

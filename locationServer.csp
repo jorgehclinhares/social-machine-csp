@@ -1,43 +1,41 @@
 
 -- (host, keyAccess)
-channel locationServerRegister: Char
-channel locationServerFind: Char
+channel locationServerRegister: Int
+channel locationServerFind: Int
 channel ls_resquest: { 0..1 }
 channel ls_response: LS_RESPONSE_TYPES
-channel ls_sms_keys: { 0..4 }
+channel ls_sms_keys: { 1, 2, 3, 4, 6, 6 }
+channel ls_operations: {0,1}
 
 -- OP 0 = Register SocialMachine
 -- OP 1 = Find SocialMachine
 
 datatype LS_RESPONSE_TYPES = socialMachineNotFound | duplicatedRelationship
 
-LocationServerMain(operation, keyAccess, smsKey) = (
-	ls_resquest!operation -> if ( empty(smsKey) ) then (
-		(operation == 0) & registerSM(operation, keyAccess, {})
-		[] (operation == 1) & findSM(operation, keyAccess, {})
-	) else (
-		(operation == 0) & registerSM(operation, keyAccess, smsKey)
-		[] (operation == 1) & findSM(operation, keyAccess, smsKey)
+LocationServerMain(smsKey) = (
+	ls_sms_keys?keyAccess -> (
+		registerSM(keyAccess, smsKey)
+		[] findSM(keyAccess, smsKey)
 	)
 )
 
-findSM(operation, keyAccess, smsKey) = (
+findSM(keyAccess, smsKey) = (
 	if ( member(keyAccess, smsKey) ) then ( 
-		locationServerFind!keyAccess -> SocialMachineMain(operation, keyAccess, smsKey)
+		locationServerFind!keyAccess -> SocialMachineMain(smsKey)
 	) else (
-		ls_response!socialMachineNotFound -> SocialMachineMain(operation, keyAccess, smsKey)
+		ls_response!socialMachineNotFound -> SocialMachineMain(smsKey)
 	)
 )
 
-registerSM(operation, keyAccess, smsKey) = (
+registerSM(keyAccess, smsKey) = (
 	if ( member(keyAccess, smsKey) ) then ( 
-		ls_response!duplicatedRelationship -> SocialMachineMain(operation, keyAccess, smsKey)
+		ls_response!duplicatedRelationship -> SocialMachineMain(smsKey)
 	) else (
-		--if (empty(smsKey)) then (
-			locationServerRegister!keyAccess -> SocialMachineMain(operation, keyAccess, smsKey)
-		--) else (
-			--SocialMachineMain(union(keyAccess, smsKey))
-		--)
+		if (empty(smsKey)) then (
+			locationServerRegister!keyAccess -> SocialMachineMain(union({keyAccess}, smsKey))
+		) else (
+			locationServerRegister!keyAccess -> SocialMachineMain(smsKey)
+		)
 	)
 )
 
