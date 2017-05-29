@@ -19,7 +19,7 @@ SM_RELATIONSHIP = { 0,1 }
 SM_OPERATION = { 0,1 }
 
 -- INIT
-Init = SM1 [|{sm_registerToServerLocation, sm_relationship}|] SM2
+Init = SM1 [|{ sm_registerToServerLocation, sm_findInServerLocation }|] SM2
 SM1 = (SocialMachineMain(1, {}))
 SM2 = (SocialMachineMain(2, {}))
 
@@ -50,6 +50,6 @@ validConstraints(accessKey, smsKey, idConst) = (
 )
 
 -- ASSERTS
-assert SM1 :[deadlock-free]
-assert SM1 :[deterministic]
-assert SM1 :[divergence-free]
+assert Init :[deadlock-free]
+assert Init :[deterministic]
+assert Init :[divergence-free]
