@@ -1,25 +1,24 @@
 include "locationServer.csp"
 
-channel serviceOn: Bool
-channel databaseOn: Bool
-channel relationships: { 0..1 }.SM_CONSTRAINTS
+-- CHANNELS
+channel relationships: SM_RELATIONSHIP.SM_CONSTRAINTS
 channel sm_response: SM_RESPONSE_TYPES
-channel sm_accessKeys: { 0..2 }
-channel databaseRelationship: { 0..2 }
-channel sm_operation: { 0, 1 }
+channel sm_operation: SM_OPERATION
 channel sm_registerToServerLocation
 channel sm_findInServerLocation
 channel sm_relationship
-channel sm_log
 
 -- DATATYPES
 datatype SM_CONSTRAINTS = accessData | countAccess 
 datatype SM_RESPONSE_TYPES = RelationInfo | RelationNotFound | constraintNotFound | InvalidAction
 
 -- CONSTANTS
-PROVIDER_RELATIONSHIPS = { 0..10 }
+PROVIDER_RELATIONSHIPS = { 0..9 }
 PROVIDER_CONSTRAINTS = SM_CONSTRAINTS
+SM_RELATIONSHIP = { 0,1 }
+SM_OPERATION = { 0,1 }
 
+-- INIT
 Init = SM1 [|{sm_registerToServerLocation, sm_relationship}|] SM2
 SM1 = (SocialMachineMain(1, {}))
 SM2 = (SocialMachineMain(2, {}))
@@ -30,11 +29,11 @@ SocialMachineMain(accessKey, smsKey) = (
 	[] if (empty(smsKey)) then(
 			sm_response!InvalidAction -> SocialMachineMain(accessKey, smsKey)
 		) else(
-			sm_relationship -> relationships?idRel.idConst -> validRelation(accessKey, smsKey, idRel, idConst)
+			sm_relationship -> relationships?idRel.idConst -> validRelationship(accessKey, smsKey, idRel, idConst)
 		)
 )
 
-validRelation(accessKey, smsKey, idRel, idConst) = (
+validRelationship(accessKey, smsKey, idRel, idConst) = (
 	if ( member(idRel, PROVIDER_RELATIONSHIPS) ) then ( 
 		validConstraints(accessKey, smsKey, idConst) 
 	) else (

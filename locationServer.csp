@@ -1,10 +1,8 @@
 
--- (host, accessKey)
+-- CHANNELS
 channel ls_register: Int
 channel ls_find: Int
-channel ls_resquest: { 0..1 }
 channel ls_response: LS_RESPONSE_TYPES
-channel ls_sms_keys: { 1, 2, 3, 4, 6, 6 }
 
 -- OP 0 = Register SocialMachine
 -- OP 1 = Find SocialMachine
